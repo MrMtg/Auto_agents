@@ -452,6 +452,55 @@ tail -f claude-loop.log
 
 ---
 
+## 🌍 全局安装（推荐）
+
+### 安装步骤
+
+```bash
+# 1. 复制初始化脚本到 ~/bin
+mkdir -p ~/bin
+cp /path/to/Auto_agents/init-project.sh ~/bin/
+chmod +x ~/bin/init-project.sh
+
+# 2. 添加到 PATH（如果还没有）
+echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# 3. 创建别名（可选）
+echo 'alias init-project=init-project.sh' >> ~/.bashrc
+source ~/.bashrc
+```
+
+### 使用方法
+
+在任何新项目目录中：
+
+```bash
+# 创建项目目录
+mkdir my-project && cd my-project
+
+# 运行初始化
+init-project
+
+# 或
+~/bin/init-project.sh
+```
+
+初始化脚本会让你选择模式：
+1. **规格驱动模式** - 复杂项目/需求模糊
+2. **传统对话模式** - 需求明确
+3. **现有项目模式** - 老项目继续开发
+
+### 安装后的优势
+
+| 不安装全局 | 安装全局后 |
+|-----------|-----------|
+| 每次复制脚本 | 一个命令搞定 |
+| 需要记住路径 | 任何目录都能用 |
+| 手动找文件 | 自动复制所有脚本 |
+
+---
+
 ## 💬 现在开始
 
 ### 场景一：新项目

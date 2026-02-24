@@ -232,59 +232,110 @@ project-root/
 
 ---
 
-## 🤖 自动化运行脚本（推荐）
+## 🤖 自动化运行（监控模式 - 推荐）
 
-本系统包含一个自动化运行脚本 `run-claude-loop.sh`，可以自动循环调用 Claude Code 完成所有任务。
+本系统包含**监控模式**，可以自动驱动 Claude Code 持续工作，直到所有任务完成。
+
+### 工作原理
+
+```
+你手动启动第一次 Claude
+        │
+        ▼
+   询问：启用监控模式？
+        │
+        你回复"是"
+        │
+        ▼
+   监控脚本启动（后台）
+        │
+        ├─→ Claude 正在运行？→ 继续监控
+        │
+        └─→ Claude 未运行？
+             │
+             ├─→ 有阻塞标记？→ 停止，等待人工解决
+             │
+             └─→ 无阻塞？→ 自动启动下一个会话
+```
 
 ### 使用方法
 
+#### 方式一：监控模式（推荐）
+
 ```bash
-# 赋予执行权限
+# 1. 初始化项目
+# 对 Agent 说："帮我初始化一个新项目"
+# 回答问题，确认生成文件
+
+# 2. 赋予执行权限
+chmod +x monitor-claude.sh
 chmod +x run-claude-loop.sh
 
-# 运行 5 次会话（完成 5 个任务）
-./run-claude-loop.sh 5
+# 3. 启动监控模式
+./monitor-claude.sh --start
 
-# 运行直到所有任务完成（999 基本上足够大）
-./run-claude-loop.sh 999
+# 4. 手动启动第一次 Claude（或让监控自动启动）
+# Claude 会询问：是否启动监控模式？
+# 回复"是"后，监控自动接管
 ```
 
-### 脚本功能
+#### 方式二：手动单次运行
 
-- ✅ 自动检测剩余任务数量
-- ✅ 显示每次会话的进度
-- ✅ 自动记录日志到 `claude-loop.log` 和 `claude-session-*.log`
-- ✅ 所有任务完成后自动停止
-- ✅ 每次会话使用 `--permission-mode acceptEdits` 自动接受权限
-- ✅ 每次会话传递固定的初始 prompt
+```bash
+# 只运行一次会话
+./run-claude-loop.sh --once
+```
 
-### 日志输出示例
+### 监控命令
+
+```bash
+./monitor-claude.sh --start    # 启动监控
+./monitor-claude.sh --stop     # 停止监控
+./monitor-claude.sh --status   # 查看状态
+./monitor-claude.sh --resume   # 解决阻塞后恢复监控
+```
+
+### 监控功能
+
+| 功能 | 说明 |
+|------|------|
+| 自动检测 | 检测 Claude 是否在当前项目目录运行 |
+| 自动启动 | Claude 停止后自动启动下一个会话 |
+| 阻塞检测 | 检测到 🚫 标记后自动暂停 |
+| 阻塞恢复 | 解决阻塞后询问是否继续 |
+| 自动完成 | 所有任务完成后自动停止 |
+| 日志记录 | 所有操作记录到 monitor.log |
+
+### 日志查看
+
+```bash
+# 查看监控日志
+tail -f monitor.log
+
+# 查看会话日志
+tail -f claude-loop.log
+```
+
+### 阻塞处理流程
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Session 1 of 999
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-▶ Current Status
-  ✓ Completed tasks: 0
-  ○ Remaining tasks: 15
-  → Next task: #1: 项目初始化和基础配置 (critical)
-
-▶ Starting Claude Code...
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Claude will now execute the development workflow.
-After Claude completes, return here to see the session summary.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-[Claude Code 运行中...]
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✓ Claude Code session completed
-
-▶ Session Results
-  Tasks before: 15 remaining, 0 completed
-  Tasks after:  14 remaining, 1 completed
-✓ 1 task(s) completed!
+监控检测到阻塞 → 停止
+        │
+        你人工解决阻塞
+        │
+        ▼
+  删除 progress.txt 中的 🚫 标记
+        │
+        ▼
+运行: ./monitor-claude.sh --resume
+        │
+        ▼
+  询问：阻塞已解决，继续？
+        │
+        你回复"是"
+        │
+        ▼
+    监控继续
 ```
 
 ### 传递给 Claude 的初始 Prompt
@@ -313,6 +364,13 @@ After Claude completes, return here to see the session summary.
 - 外部服务不可用
 - 测试无法进行
 - 需求不明确
+
+阻塞信息格式：
+🚫 任务阻塞 - 需要人工介入
+**当前任务**: [任务ID - 任务标题]
+**阻塞原因**: [具体原因]
+
+完成所有步骤后，明确说明"本次会话任务完成，退出"。
 ```
 
 ---

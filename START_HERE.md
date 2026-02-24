@@ -377,6 +377,8 @@ tail -f claude-loop.log
 
 ## 💬 现在开始
 
+### 场景一：新项目
+
 **请告诉我以下信息：**
 
 **【基本信息】**
@@ -392,3 +394,40 @@ tail -f claude-loop.log
 - 需要后端吗？需要数据库吗？
 
 或者你有 PRD 文档可以直接给我。
+
+---
+
+### 场景二：现有项目
+
+如果你已经有一个项目，想用这个系统来继续开发：
+
+```bash
+# 1. 复制扫描脚本到你的项目目录
+cp /path/to/Auto_agents/scan-existing-project.sh your-project/
+cd your-project
+
+# 2. 运行扫描脚本
+chmod +x scan-existing-project.sh
+./scan-existing-project.sh
+
+# 3. 编辑生成的 task.json，添加你的具体任务
+vim task.json
+
+# 4. 复制其他脚本
+cp /path/to/Auto_agents/monitor-claude.sh .
+cp /path/to/Auto_agents/run-claude-loop.sh .
+
+# 5. 启动监控模式
+chmod +x monitor-claude.sh run-claude-loop.sh
+./monitor-claude.sh --start
+```
+
+**扫描脚本会做什么：**
+1. 检测项目类型（React/Vue/Next.js 等）
+2. 分析现有代码库
+3. 生成默认的 `task.json`
+4. 生成 `CLAUDE.md`
+
+**你需要做的：**
+1. 编辑 `task.json`，将默认任务替换成你的具体需求
+2. 根据 `task.json` 制定详细的开发计划
